@@ -1,0 +1,29 @@
+{
+  "name": "simokardi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev:backend": "nodemon backend/server.js",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "db:init": "mysql -u root -p < database/schema.sql",
+    "db:migrate": "mysql -u root -p simokardi < database/migrations/001_users.sql",
+    "db:migrate:002": "mysql -u root -p simokardi < database/migrations/002_role_pasien.sql",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.17.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}
