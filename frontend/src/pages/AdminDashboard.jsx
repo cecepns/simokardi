@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import UserManagement from '../components/UserManagement'
 import { Link } from 'react-router-dom'
-
-const API = '/api'
+import { API } from '../utils/api'
 
 export default function AdminDashboard() {
   const { fetchWithAuth } = useAuth()

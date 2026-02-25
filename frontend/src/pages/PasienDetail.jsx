@@ -3,8 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import MonitoringForm from '../components/MonitoringForm'
 import MonitoringList from '../components/MonitoringList'
-
-const API = '/api'
+import { API } from '../utils/api'
 
 const domainLabels = {
   pola_makan: 'Pola Makan',

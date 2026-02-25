@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react'
-
-const API = '/api'
+import { API } from '../utils/api'
 const TOKEN_KEY = 'simokardi_token'
 
 const AuthContext = createContext(null)

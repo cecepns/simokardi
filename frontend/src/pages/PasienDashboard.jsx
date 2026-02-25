@@ -3,8 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import MonitoringForm from '../components/MonitoringForm'
 import MonitoringList from '../components/MonitoringList'
 import EdukasiBooklet from '../components/EdukasiBooklet'
-
-const API = '/api'
+import { API } from '../utils/api'
 
 const domainLabels = {
   pola_makan: 'Pola Makan',

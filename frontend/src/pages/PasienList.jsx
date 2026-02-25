@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-
-const API = '/api'
+import { API } from '../utils/api'
 
 export default function PasienList() {
   const { fetchWithAuth } = useAuth()
@@ -16,7 +15,7 @@ export default function PasienList() {
       .then(setPatients)
       .catch(console.error)
       .finally(() => setLoading(false))
-  }, [])
+  }, [fetchWithAuth])
 
   const filtered = patients.filter(
     (p) =>

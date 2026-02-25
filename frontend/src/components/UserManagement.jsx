@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { Pencil, Trash2, Key, Check, X } from 'lucide-react'
-
-const API = '/api'
+import { API } from '../utils/api'
 
 export default function UserManagement() {
   const { fetchWithAuth } = useAuth()

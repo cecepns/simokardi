@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { Plus, Trash2, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-
-const API = '/api'
+import { API } from '../utils/api'
 const domainLabels = {
   pola_makan: 'Pola Makan',
   istirahat: 'Istirahat',

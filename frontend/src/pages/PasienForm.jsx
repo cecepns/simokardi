@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-
-const API = '/api'
+import { API } from '../utils/api'
 
 export default function PasienForm() {
   const { fetchWithAuth } = useAuth()
