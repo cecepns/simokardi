@@ -97,7 +97,7 @@ function getKategori(skor) {
 
 // Estimasikan nilai gizi (karbohidrat, protein, lemak) dari makanan & minuman via Gemini AI
 async function estimasiGiziDenganGemini(makanan, minuman) {
-  const apiKey = "AIzaSyD9tGOmSo2qGYp14kT2imYYFKZpAEFr2gs";
+  const apiKey = "";
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY belum diatur. Tambahkan di file .env');
   }
