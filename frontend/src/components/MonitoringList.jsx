@@ -11,20 +11,21 @@ export default function MonitoringList({ monitoring, domainLabels }) {
     try {
       const d = typeof m.data_json === 'string' ? JSON.parse(m.data_json) : m.data_json
       if (m.domain === 'pola_makan') {
-        if (d.makanan?.length || d.minuman?.length) {
-          const parts = []
-          if (d.karbohidrat_persen != null) parts.push(`Karbo ${d.karbohidrat_persen}%`)
-          if (d.protein_gram != null) parts.push(`Protein ${d.protein_gram}g`)
-          if (d.lemak_persen != null) parts.push(`Lemak ${d.lemak_persen}%`)
-          if (parts.length) return parts.join(' | ') + ' (AI)'
-          const items = [...(d.makanan || []).map((x) => x.jenis), ...(d.minuman || []).map((x) => x.jenis)]
-          return items.filter(Boolean).join(', ') || '-'
-        }
-        return `Karbo ${d.karbohidrat_persen}% | Protein ${d.protein_gram}g | Lemak ${d.lemak_persen}%`
+        const filled = (s) => s != null && String(s).trim() !== ''
+        const parts = []
+        if (filled(d.karbohidrat)) parts.push('Karbo')
+        if (filled(d.protein)) parts.push('Protein')
+        if (filled(d.sayur)) parts.push('Sayur')
+        if (filled(d.buah)) parts.push('Buah')
+        return parts.length ? parts.join(', ') : '-'
       }
       if (m.domain === 'istirahat') return `${d.jam_tidur} jam tidur`
-      if (m.domain === 'aktivitas_fisik') return `${d.menit_per_minggu} menit/minggu (${d.intensitas})`
-      if (m.domain === 'konsumsi_obat') return `Kepatuhan: ${d.skor_kepatuhan}/5`
+      if (m.domain === 'aktivitas_fisik') {
+        const a = d.menit_aktivitas_fisik ?? '-'
+        const o = d.menit_olahraga ?? '-'
+        return `Aktivitas ${a} menit | Olahraga ${o} menit`
+      }
+      if (m.domain === 'konsumsi_obat') return d.minum_obat ? 'Minum obat' : 'Tidak minum'
     } catch (_) {}
     return '-'
   }

@@ -13,12 +13,11 @@ const domainLabels = {
 }
 
 export default function PasienDashboard() {
-  const { fetchWithAuth, user } = useAuth()
+  const { fetchWithAuth } = useAuth()
   const [patient, setPatient] = useState(null)
   const [monitoring, setMonitoring] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
-  const [selectedDomain, setSelectedDomain] = useState(null)
   const [showEdukasi, setShowEdukasi] = useState(true)
 
   const loadData = () => {
@@ -40,7 +39,6 @@ export default function PasienDashboard() {
 
   const handleMonitoringSaved = () => {
     setShowForm(false)
-    setSelectedDomain(null)
     loadData()
   }
 
@@ -94,20 +92,12 @@ export default function PasienDashboard() {
         <div className="px-6 py-4 border-b border-slate-200 flex flex-wrap justify-between items-center gap-4">
           <h2 className="text-lg font-semibold text-slate-800">Input Data Self-Care</h2>
           {!showForm && (
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(domainLabels).map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => {
-                    setSelectedDomain(key)
-                    setShowForm(true)
-                  }}
-                  className="px-4 py-2 bg-rose-50 text-rose-700 rounded-lg hover:bg-rose-100 text-sm font-medium"
-                >
-                  + {label}
-                </button>
-              ))}
-            </div>
+            <button
+              onClick={() => setShowForm(true)}
+              className="px-4 py-2 bg-rose-50 text-rose-700 rounded-lg hover:bg-rose-100 text-sm font-medium"
+            >
+              Isi Form
+            </button>
           )}
         </div>
 
@@ -116,12 +106,9 @@ export default function PasienDashboard() {
             <MonitoringForm
               patientId={patient.id}
               patient={patient}
-              domain={selectedDomain}
+              domain="all"
               onSaved={handleMonitoringSaved}
-              onCancel={() => {
-                setShowForm(false)
-                setSelectedDomain(null)
-              }}
+              onCancel={() => setShowForm(false)}
               useMeApi
             />
           </div>
