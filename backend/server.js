@@ -621,9 +621,23 @@ app.put('/api/patients/:id', adminOnly, async (req, res) => {
 app.delete('/api/patients/:id', adminOnly, async (req, res) => {
   try {
     const db = await getPool();
-    const [r] = await db.query('DELETE FROM patients WHERE id = ?', [req.params.id]);
-    if (r.affectedRows === 0) return res.status(404).json({ error: 'Pasien tidak ditemukan' });
-    res.json({ message: 'Pasien berhasil dihapus' });
+    const conn = await db.getConnection();
+    try {
+      await conn.beginTransaction();
+      const [r] = await conn.query('DELETE FROM patients WHERE id = ?', [req.params.id]);
+      if (r.affectedRows === 0) {
+        await conn.rollback();
+        return res.status(404).json({ error: 'Pasien tidak ditemukan' });
+      }
+      const [u] = await conn.query('DELETE FROM users WHERE patient_id = ?', [req.params.id]);
+      await conn.commit();
+      res.json({ message: 'Pasien berhasil dihapus', deleted_user_count: u.affectedRows || 0 });
+    } catch (e) {
+      await conn.rollback();
+      throw e;
+    } finally {
+      conn.release();
+    }
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
