@@ -17,17 +17,62 @@ const POLA_MAKAN_OPTIONS = [
   { key: 'buah', label: 'Buah' },
 ]
 
-export default function MonitoringForm({ patientId, domain, onSaved, onCancel, useMeApi }) {
+const AKTIVITAS_HARIAN_OPTIONS = [
+  {
+    key: 'ringan',
+    label: 'Ringan',
+    detail: 'Aktivitas rumah tangga ringan, jalan santai, peregangan (<3 METs)',
+  },
+  {
+    key: 'sedang',
+    label: 'Sedang',
+    detail: 'Jalan cepat/bersepeda santai 30 menit (3-6 METs, rekomendasi utama WHO)',
+  },
+  {
+    key: 'berat',
+    label: 'Berat',
+    detail: 'Lari, naik tangga intens, bersepeda cepat (>6 METs)',
+  },
+]
+
+function getUsia(patient) {
+  const age = Number(patient?.usia)
+  if (Number.isFinite(age)) return age
+  return 0
+}
+
+function getRekomendasiTidurByUsia(usia) {
+  if (usia >= 65) return { malam: '7-8 jam', siang: '0.5-1.5 jam' }
+  if (usia >= 18) return { malam: '7-9 jam', siang: '0-1 jam' }
+  return { malam: '8-10 jam', siang: '1-2 jam' }
+}
+
+function normalizeMakananKategori(input) {
+  if (input && typeof input === 'object') {
+    return {
+      makanan: input.makanan || '',
+      porsi: input.porsi ?? '',
+    }
+  }
+  return {
+    makanan: input || '',
+    porsi: '',
+  }
+}
+
+export default function MonitoringForm({ patientId, patient, domain, onSaved, onCancel, useMeApi }) {
   const { fetchWithAuth } = useAuth()
+  const usia = getUsia(patient)
+  const rekomendasiTidur = getRekomendasiTidurByUsia(usia)
   const [tanggal, setTanggal] = useState(new Date().toISOString().split('T')[0])
   const [form, setForm] = useState({
-    karbohidrat: '',
-    protein: '',
-    sayur: '',
-    buah: '',
-    jam_tidur: '',
-    menit_aktivitas_fisik: '',
-    menit_olahraga: '',
+    karbohidrat: { makanan: '', porsi: '' },
+    protein: { makanan: '', porsi: '' },
+    sayur: { makanan: '', porsi: '' },
+    buah: { makanan: '', porsi: '' },
+    jam_tidur_siang: '',
+    jam_tidur_malam: '',
+    kategori_aktivitas_harian: '',
     minum_obat: null,
   })
   const [loading, setLoading] = useState(false)
@@ -44,25 +89,39 @@ export default function MonitoringForm({ patientId, domain, onSaved, onCancel, u
   const buildPayloads = () => {
     const payloads = []
     const trim = (s) => (s && String(s).trim()) || ''
-    const karbo = trim(form.karbohidrat)
-    const protein = trim(form.protein)
-    const sayur = trim(form.sayur)
-    const buah = trim(form.buah)
+    const kategoriMakanan = {
+      karbohidrat: normalizeMakananKategori(form.karbohidrat),
+      protein: normalizeMakananKategori(form.protein),
+      sayur: normalizeMakananKategori(form.sayur),
+      buah: normalizeMakananKategori(form.buah),
+    }
+    const buildKategoriPayload = (key) => {
+      const current = kategoriMakanan[key]
+      return {
+        makanan: trim(current.makanan),
+        porsi: parseFloat(current.porsi) || 0,
+      }
+    }
     if (isAllMode) {
       payloads.push({
         domain: 'pola_makan',
-        data: { karbohidrat: karbo, protein, sayur, buah },
+        data: {
+          karbohidrat: buildKategoriPayload('karbohidrat'),
+          protein: buildKategoriPayload('protein'),
+          sayur: buildKategoriPayload('sayur'),
+          buah: buildKategoriPayload('buah'),
+        },
       })
       payloads.push({
         domain: 'istirahat',
-        data: { jam_tidur: parseFloat(form.jam_tidur) || 0 },
+        data: {
+          jam_tidur_siang: parseFloat(form.jam_tidur_siang) || 0,
+          jam_tidur_malam: parseFloat(form.jam_tidur_malam) || 0,
+        },
       })
       payloads.push({
         domain: 'aktivitas_fisik',
-        data: {
-          menit_aktivitas_fisik: parseFloat(form.menit_aktivitas_fisik) || 0,
-          menit_olahraga: parseFloat(form.menit_olahraga) || 0,
-        },
+        data: { kategori_aktivitas_harian: form.kategori_aktivitas_harian },
       })
       payloads.push({
         domain: 'konsumsi_obat',
@@ -72,20 +131,25 @@ export default function MonitoringForm({ patientId, domain, onSaved, onCancel, u
       if (domain === 'pola_makan') {
         payloads.push({
           domain: 'pola_makan',
-          data: { karbohidrat: karbo, protein, sayur, buah },
+          data: {
+            karbohidrat: buildKategoriPayload('karbohidrat'),
+            protein: buildKategoriPayload('protein'),
+            sayur: buildKategoriPayload('sayur'),
+            buah: buildKategoriPayload('buah'),
+          },
         })
       } else if (domain === 'istirahat') {
         payloads.push({
           domain: 'istirahat',
-          data: { jam_tidur: parseFloat(form.jam_tidur) || 0 },
+          data: {
+            jam_tidur_siang: parseFloat(form.jam_tidur_siang) || 0,
+            jam_tidur_malam: parseFloat(form.jam_tidur_malam) || 0,
+          },
         })
       } else if (domain === 'aktivitas_fisik') {
         payloads.push({
           domain: 'aktivitas_fisik',
-          data: {
-            menit_aktivitas_fisik: parseFloat(form.menit_aktivitas_fisik) || 0,
-            menit_olahraga: parseFloat(form.menit_olahraga) || 0,
-          },
+          data: { kategori_aktivitas_harian: form.kategori_aktivitas_harian },
         })
       } else if (domain === 'konsumsi_obat') {
         payloads.push({
@@ -98,17 +162,19 @@ export default function MonitoringForm({ patientId, domain, onSaved, onCancel, u
   }
 
   const validate = () => {
-    if (isAllMode) {
-      if (form.minum_obat === null) {
-        setError('Pilih apakah hari ini minum obat atau tidak')
-        return false
-      }
-    } else {
-      if (domain === 'konsumsi_obat' && form.minum_obat === null) {
-        setError('Pilih apakah hari ini minum obat atau tidak')
-        return false
-      }
+    const needsAktivitasValidation = isAllMode || domain === 'aktivitas_fisik'
+    const needsObatValidation = isAllMode || domain === 'konsumsi_obat'
+
+    if (needsAktivitasValidation && !form.kategori_aktivitas_harian) {
+      setError('Pilih kategori aktivitas fisik harian (ringan/sedang/berat)')
+      return false
     }
+
+    if (needsObatValidation && form.minum_obat === null) {
+      setError('Pilih apakah hari ini minum obat atau tidak')
+      return false
+    }
+
     return true
   }
 
@@ -161,27 +227,50 @@ export default function MonitoringForm({ patientId, domain, onSaved, onCancel, u
   const renderPolaMakan = (showSection) => {
     if (!showSection) return null
     const placeholders = {
-      karbohidrat: 'Contoh: nasi, kentang, roti',
-      protein: 'Contoh: ayam, telur, tempe, ikan',
-      sayur: 'Contoh: bayam, kangkung, wortel',
-      buah: 'Contoh: pisang, apel, jeruk',
+      karbohidrat: 'Contoh: nasi merah, kentang rebus, mie jagung',
+      protein: 'Contoh: ayam kukus, telur rebus, tempe',
+      sayur: 'Contoh: bayam, brokoli, wortel',
+      buah: 'Contoh: pepaya, apel, pir',
     }
     return (
       <div className="space-y-4">
         <p className="text-xs text-slate-500">
-          Isi apa yang dikonsumsi per kategori. 4 lengkap = 100%, 3 = 75%, 2 = 50%, 1 = 25%. Di bawah 50% = tidak adekuat. AI akan memberikan estimasi nilai gizi sebagai informasi.
+          Isi makanan yang dikonsumsi beserta porsinya. Setiap kategori terisi (karbo, protein, sayur, buah) bernilai 25%.
+          Ambang adekuat SC-CHDI minimal 70%. AI akan memberikan estimasi nilai gizi sebagai informasi.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {POLA_MAKAN_OPTIONS.map(({ key, label }) => (
-            <div key={key}>
-              <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
+            <div key={key} className="space-y-2">
+              <label className="block text-sm font-medium text-slate-700">{label}</label>
               <input
                 type="text"
-                value={form[key] || ''}
-                onChange={(e) => handleChange(key, e.target.value)}
+                value={normalizeMakananKategori(form[key]).makanan}
+                onChange={(e) =>
+                  handleChange(key, {
+                    ...normalizeMakananKategori(form[key]),
+                    makanan: e.target.value,
+                  })
+                }
                 placeholder={placeholders[key]}
                 className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm"
               />
+              <div>
+                <label className="block text-xs text-slate-500 mb-1">Porsi</label>
+                <input
+                  type="number"
+                  value={normalizeMakananKategori(form[key]).porsi}
+                  onChange={(e) =>
+                    handleChange(key, {
+                      ...normalizeMakananKategori(form[key]),
+                      porsi: e.target.value,
+                    })
+                  }
+                  min="0"
+                  step="0.5"
+                  placeholder="Contoh: 1.5"
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm"
+                />
+              </div>
             </div>
           ))}
         </div>
@@ -194,20 +283,36 @@ export default function MonitoringForm({ patientId, domain, onSaved, onCancel, u
     return (
       <div className="space-y-2">
         <p className="text-xs text-slate-500">
-          Normal 7–8 jam = 100%. Di bawah 7 jam = 50% (tidak adekuat).
+          Rekomendasi usia {usia} tahun: tidur malam {rekomendasiTidur.malam} dan tidur siang {rekomendasiTidur.siang}.
+          Keduanya dihitung dalam skor SC-CHDI.
         </p>
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Jam tidur per malam</label>
-          <input
-            type="number"
-            value={form.jam_tidur}
-            onChange={(e) => handleChange('jam_tidur', e.target.value)}
-            min="0"
-            max="24"
-            step="0.5"
-            placeholder="Contoh: 7.5"
-            className="w-full max-w-xs px-4 py-2 border border-slate-300 rounded-lg"
-          />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Jam tidur siang</label>
+            <input
+              type="number"
+              value={form.jam_tidur_siang}
+              onChange={(e) => handleChange('jam_tidur_siang', e.target.value)}
+              min="0"
+              max="6"
+              step="0.5"
+              placeholder="Contoh: 1"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Jam tidur malam</label>
+            <input
+              type="number"
+              value={form.jam_tidur_malam}
+              onChange={(e) => handleChange('jam_tidur_malam', e.target.value)}
+              min="0"
+              max="14"
+              step="0.5"
+              placeholder="Contoh: 7.5"
+              className="w-full px-4 py-2 border border-slate-300 rounded-lg"
+            />
+          </div>
         </div>
       </div>
     )
@@ -218,31 +323,31 @@ export default function MonitoringForm({ patientId, domain, onSaved, onCancel, u
     return (
       <div className="space-y-2">
         <p className="text-xs text-slate-500">
-          Aktivitas fisik 50% + Olahraga 50% = 100%. Tanpa olahraga maksimal 50% = tidak adekuat.
+          Pilih kategori aktivitas fisik per hari sesuai teori intensitas. Skor SC-CHDI: ringan 40%, sedang 80%, berat 100%.
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Menit aktivitas fisik/minggu (50%)</label>
-            <input
-              type="number"
-              value={form.menit_aktivitas_fisik}
-              onChange={(e) => handleChange('menit_aktivitas_fisik', e.target.value)}
-              min="0"
-              placeholder="Contoh: 150"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Menit olahraga/minggu (50%)</label>
-            <input
-              type="number"
-              value={form.menit_olahraga}
-              onChange={(e) => handleChange('menit_olahraga', e.target.value)}
-              min="0"
-              placeholder="Contoh: 75"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg"
-            />
-          </div>
+        <div className="space-y-2">
+          {AKTIVITAS_HARIAN_OPTIONS.map((item) => (
+            <label
+              key={item.key}
+              className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                form.kategori_aktivitas_harian === item.key
+                  ? 'border-rose-300 bg-rose-50'
+                  : 'border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <input
+                type="radio"
+                name="kategori_aktivitas_harian"
+                checked={form.kategori_aktivitas_harian === item.key}
+                onChange={() => handleChange('kategori_aktivitas_harian', item.key)}
+                className="mt-1 border-slate-300 text-rose-600 focus:ring-rose-500"
+              />
+              <div>
+                <p className="text-sm font-semibold text-slate-800 capitalize">{item.label}</p>
+                <p className="text-xs text-slate-500">{item.detail}</p>
+              </div>
+            </label>
+          ))}
         </div>
       </div>
     )
@@ -253,7 +358,7 @@ export default function MonitoringForm({ patientId, domain, onSaved, onCancel, u
     return (
       <div className="space-y-2">
         <p className="text-xs text-slate-500">
-          Minum obat = adekuat. Tidak minum = tidak adekuat.
+          Minum obat sesuai resep = 100% (adekuat). Tidak minum = 0% (tidak adekuat) pada domain SC-CHDI konsumsi obat.
         </p>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">Hari ini minum obat sesuai resep?</label>
@@ -331,7 +436,7 @@ export default function MonitoringForm({ patientId, domain, onSaved, onCancel, u
                     <span className="text-2xl font-bold text-slate-800">{successResult.skor_akhir}%</span>
                   </div>
                   <div className="flex items-center justify-between py-3 px-4 rounded-xl bg-slate-50">
-                    <span className="text-slate-600 font-medium">Kategori</span>
+                    <span className="text-slate-600 font-medium">Status SC-CHDI</span>
                     <span
                       className={`font-semibold capitalize ${
                         successResult.kategori === 'adekuat' ? 'text-emerald-600' : 'text-amber-600'

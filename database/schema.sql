@@ -24,8 +24,8 @@ CREATE TABLE IF NOT EXISTS monitoring (
   tanggal DATE NOT NULL,
   domain ENUM('pola_makan', 'istirahat', 'aktivitas_fisik', 'konsumsi_obat') NOT NULL,
   -- Pola makan: karbohidrat_persen, protein_gram, lemak_persen
-  -- Istirahat: jam_tidur
-  -- Aktivitas fisik: menit_per_minggu, intensitas (sedang/berat)
+  -- Istirahat: jam_tidur_siang, jam_tidur_malam (sesuai usia)
+  -- Aktivitas fisik: kategori_aktivitas_harian (ringan/sedang/berat)
   -- Konsumsi obat: skor_kepatuhan (1-5)
   data_json JSON NOT NULL,
   skor_akhir DECIMAL(5,2) NOT NULL,

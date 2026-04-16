@@ -47,28 +47,74 @@ function hitungUsia(tglLahir) {
   return age;
 }
 
-// Skor pola makan: 4 kategori (input teks). Yang terisi dihitung: 4 = 100%, 3 = 75%, 2 = 50%, 1 = 25%. Di bawah 50% = tidak adekuat
+function parseKategoriMakanan(input) {
+  if (input && typeof input === 'object') {
+    return {
+      makanan: String(input.makanan || '').trim(),
+      porsi: Math.max(0, parseFloat(input.porsi) || 0),
+    };
+  }
+  return {
+    makanan: String(input || '').trim(),
+    porsi: 0,
+  };
+}
+
+function getRekomendasiTidurByUsia(usia) {
+  const age = Number.isFinite(usia) ? usia : 0;
+  if (age >= 65) {
+    return {
+      malam: { min: 7, max: 8 },
+      siang: { min: 0.5, max: 1.5 },
+    };
+  }
+  if (age >= 18) {
+    return {
+      malam: { min: 7, max: 9 },
+      siang: { min: 0, max: 1 },
+    };
+  }
+  return {
+    malam: { min: 8, max: 10 },
+    siang: { min: 1, max: 2 },
+  };
+}
+
+function inRange(value, range) {
+  return Number.isFinite(value) && value >= range.min && value <= range.max;
+}
+
+// Skor pola makan: 4 kategori (makanan + porsi). Kategori dianggap terisi jika nama makanan diisi.
 function hitungSkorPolaMakan(data) {
-  const filled = (s) => (s != null && String(s).trim() !== '');
-  const count = [data?.karbohidrat, data?.protein, data?.sayur, data?.buah].filter(filled).length;
+  const kategori = [
+    parseKategoriMakanan(data?.karbohidrat),
+    parseKategoriMakanan(data?.protein),
+    parseKategoriMakanan(data?.sayur),
+    parseKategoriMakanan(data?.buah),
+  ];
+  const count = kategori.filter((k) => k.makanan !== '').length;
   return count * 25;
 }
 
-// Skor istirahat: 7-8 jam normal = 100%. Di bawah 7 jam = 50% (tidak adekuat)
-function hitungSkorIstirahat(jamTidur) {
-  const h = parseFloat(jamTidur);
-  if (!Number.isFinite(h)) return 0;
-  if (h >= 7 && h <= 8) return 100;
-  return 50;
+// Skor istirahat: tidur malam (60%) + tidur siang (40%), disesuaikan usia.
+function hitungSkorIstirahat(data, usia) {
+  const malam = parseFloat(data?.jam_tidur_malam);
+  const siang = parseFloat(data?.jam_tidur_siang);
+  const rekomendasi = getRekomendasiTidurByUsia(usia);
+
+  let skor = 0;
+  if (inRange(malam, rekomendasi.malam)) skor += 60;
+  if (inRange(siang, rekomendasi.siang)) skor += 40;
+  return skor;
 }
 
-// Skor aktivitas fisik: aktivitas fisik 50% + olahraga 50%. Tanpa olahraga max 50% = tidak adekuat
+// Skor aktivitas fisik per hari berdasarkan kategori intensitas (teori MET/WHO).
 function hitungSkorAktivitasFisik(data) {
-  const aktivitas = parseFloat(data?.menit_aktivitas_fisik) || 0;
-  const olahraga = parseFloat(data?.menit_olahraga) || 0;
-  const skorAktivitas = aktivitas >= 150 ? 50 : 0;
-  const skorOlahraga = olahraga >= 75 ? 50 : 0;
-  return skorAktivitas + skorOlahraga;
+  const kategori = String(data?.kategori_aktivitas_harian || '').toLowerCase();
+  if (kategori === 'berat') return 100;
+  if (kategori === 'sedang') return 80;
+  if (kategori === 'ringan') return 40;
+  return 0;
 }
 
 // Skor konsumsi obat: minum = 100% adekuat, tidak minum = 0% tidak adekuat
@@ -76,9 +122,9 @@ function hitungSkorKonsumsiObat(data) {
   return data?.minum_obat === true ? 100 : 0;
 }
 
-// Di atas 50% = adekuat, 50% ke bawah = tidak adekuat
+// Skor SC-CHDI >= 70% = adekuat, di bawahnya = tidak adekuat
 function getKategori(skor) {
-  return skor > 50 ? 'adekuat' : 'tidak_adekuat';
+  return skor >= 70 ? 'adekuat' : 'tidak_adekuat';
 }
 
 // Estimasikan nilai gizi (karbohidrat, protein, lemak) dari makanan & minuman via Gemini AI
@@ -185,18 +231,28 @@ Ketentuan:
   };
 }
 
-// Estimasi nilai gizi (karbo, protein, sayur, buah) dari 4 input teks via Gemini - sebagai informasi saja
-async function estimasiGiziPolaMakan4Kategori(karbohidratStr, proteinStr, sayurStr, buahStr) {
+// Estimasi nilai gizi (karbo, protein, sayur, buah) dari 4 kategori makanan + porsi via Gemini.
+async function estimasiGiziPolaMakan4Kategori(karbohidratInput, proteinInput, sayurInput, buahInput) {
   const apiKey = process.env.GEMINI_API_KEY || '';
   if (!apiKey) return null;
+
+  const karbo = parseKategoriMakanan(karbohidratInput);
+  const protein = parseKategoriMakanan(proteinInput);
+  const sayur = parseKategoriMakanan(sayurInput);
+  const buah = parseKategoriMakanan(buahInput);
+  const toLine = (label, value) => {
+    const nama = value.makanan || '(tidak diisi)';
+    const porsi = value.porsi > 0 ? `${value.porsi} porsi` : '(porsi tidak diisi)';
+    return `${label}: ${nama} | ${porsi}`;
+  };
 
   const prompt = `Kamu adalah ahli gizi untuk pasien penyakit jantung (lansia Indonesia).
 Dari asupan per kategori berikut, berikan ESTIMASI nilai gizi sebagai informasi saja (tidak untuk penilaian).
 
-KARBOHIDRAT yang dikonsumsi: ${(karbohidratStr || '').trim() || '(tidak diisi)'}
-PROTEIN yang dikonsumsi: ${(proteinStr || '').trim() || '(tidak diisi)'}
-SAYUR yang dikonsumsi: ${(sayurStr || '').trim() || '(tidak diisi)'}
-BUAH yang dikonsumsi: ${(buahStr || '').trim() || '(tidak diisi)'}
+${toLine('KARBOHIDRAT', karbo)}
+${toLine('PROTEIN', protein)}
+${toLine('SAYUR', sayur)}
+${toLine('BUAH', buah)}
 
 Return HANYA JSON valid (tanpa markdown, tanpa penjelasan):
 {
@@ -582,12 +638,13 @@ async function handlePostMonitoring(req, res, patientId) {
   const validDomains = ['pola_makan', 'istirahat', 'aktivitas_fisik', 'konsumsi_obat'];
   if (!validDomains.includes(domain)) return res.status(400).json({ error: 'Domain tidak valid' });
   const db = await getPool();
-  const [[patient]] = await db.query('SELECT id FROM patients WHERE id = ?', [patientId]);
+  const [[patient]] = await db.query('SELECT id, tgl_lahir FROM patients WHERE id = ?', [patientId]);
   if (!patient) return res.status(404).json({ error: 'Pasien tidak ditemukan' });
+  const usia = hitungUsia(patient.tgl_lahir);
   let skorAkhir;
   switch (domain) {
     case 'pola_makan': skorAkhir = hitungSkorPolaMakan(data); break;
-    case 'istirahat': skorAkhir = hitungSkorIstirahat(parseFloat(data.jam_tidur)); break;
+    case 'istirahat': skorAkhir = hitungSkorIstirahat(data, usia); break;
     case 'aktivitas_fisik': skorAkhir = hitungSkorAktivitasFisik(data); break;
     case 'konsumsi_obat': skorAkhir = hitungSkorKonsumsiObat(data); break;
     default: return res.status(400).json({ error: 'Domain tidak valid' });
@@ -602,7 +659,9 @@ async function handlePostMonitoring(req, res, patientId) {
   );
   const payload = { skor_akhir: skorAman, kategori };
   if (domain === 'pola_makan') {
-    const hasInput = [data.karbohidrat, data.protein, data.sayur, data.buah].some((s) => s != null && String(s).trim() !== '');
+    const hasInput = [data.karbohidrat, data.protein, data.sayur, data.buah]
+      .map(parseKategoriMakanan)
+      .some((s) => s.makanan !== '');
     if (hasInput) {
       const estimasi = await estimasiGiziPolaMakan4Kategori(
         data.karbohidrat,

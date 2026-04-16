@@ -55,7 +55,7 @@ export default function PasienDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 mb-2">Data Monitoring Saya</h1>
-          <p className="text-slate-600">No. RM: {patient.no_rm} | Usia: {patient.usia} tahun</p>
+          <p className="text-slate-600">Usia: {patient.usia} tahun</p>
         </div>
         <button
           onClick={() => setShowEdukasi(!showEdukasi)}

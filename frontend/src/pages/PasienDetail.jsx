@@ -60,7 +60,7 @@ export default function PasienDetail() {
             ← Kembali ke Daftar Pasien
           </Link>
           <h1 className="text-2xl font-bold text-slate-800">{patient.nama}</h1>
-          <p className="text-slate-600">No. RM: {patient.no_rm} | Usia: {patient.usia} tahun</p>
+          <p className="text-slate-600">Nomor Rekam Medis: {patient.no_rm} | Usia: {patient.usia} tahun</p>
         </div>
         <Link
           to={`/pasien/${id}/edit`}

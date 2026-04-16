@@ -71,7 +71,7 @@ export default function Dashboard() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Domain</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Tanggal</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Skor</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Kategori</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status SC-CHDI</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -93,7 +93,7 @@ export default function Dashboard() {
                           m.kategori === 'adekuat' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
                         }`}
                       >
-                        {m.kategori}
+                        {m.kategori === 'adekuat' ? 'Adekuat' : 'Tidak Adekuat'}
                       </span>
                     </td>
                   </tr>

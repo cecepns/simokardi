@@ -46,6 +46,16 @@ export default function EdukasiBooklet() {
               </div>
             </div>
           </div>
+          <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+            <h4 className="font-semibold text-slate-800 mb-2">Bolehkah Makan Mie?</h4>
+            <p className="mb-2">Boleh, tetapi dibatasi porsinya dan pilih jenis yang lebih baik untuk jantung.</p>
+            <ul className="space-y-1">
+              <li>• Pilih: mie gandum utuh, mie jagung, bihun/kwetiau secukupnya</li>
+              <li>• Batasi: mie instan (tinggi natrium, lemak, dan bumbu)</li>
+              <li>• Jika makan mie: tambahkan sayur + protein rendah lemak, kurangi kuah/bumbu</li>
+              <li>• Porsi anjuran: sekitar 1 porsi kecil per makan, tidak setiap hari</li>
+            </ul>
+          </div>
           <div>
             <h4 className="font-semibold text-slate-800 mb-2">Normal Porsi Karbohidrat (≤60% kalori/hari)</h4>
             <ul className="space-y-1 text-sm">
@@ -82,8 +92,8 @@ export default function EdukasiBooklet() {
           <div className="p-4 bg-sky-50 rounded-xl border border-sky-200">
             <h4 className="font-semibold text-slate-800 mb-2">Normal Waktu Tidur (NSF)</h4>
             <ul>
-              <li><strong>Usia 18–64 tahun:</strong> 7–9 jam per malam</li>
-              <li><strong>Usia ≥65 tahun:</strong> 7–8 jam per malam</li>
+              <li><strong>Usia 18–64 tahun:</strong> malam 7–9 jam + siang 0–1 jam</li>
+              <li><strong>Usia ≥65 tahun:</strong> malam 7–8 jam + siang 0,5–1,5 jam</li>
             </ul>
             <p className="mt-2 text-xs text-slate-500">Rentang optimal untuk hormon, metabolik, kesehatan kardiovaskular, dan kemampuan kognitif.</p>
           </div>
@@ -98,13 +108,13 @@ export default function EdukasiBooklet() {
         <div className="space-y-4 text-slate-600 text-sm">
           <p>Olahraga penting untuk kebugaran, mengontrol berat badan, dan menurunkan risiko penyakit.</p>
           <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200">
-            <h4 className="font-semibold text-slate-800 mb-2">Contoh Aktivitas</h4>
+            <h4 className="font-semibold text-slate-800 mb-2">Kategori Aktivitas Per Hari (Teori Intensitas)</h4>
             <ul className="space-y-1">
-              <li>• Jalan kaki ±30 menit</li>
-              <li>• Stretching / peregangan</li>
-              <li>• Bersepeda</li>
+              <li>• <strong>Ringan (&lt;3 METs):</strong> jalan santai, aktivitas rumah tangga ringan</li>
+              <li>• <strong>Sedang (3–6 METs):</strong> jalan cepat, bersepeda santai, senam ringan</li>
+              <li>• <strong>Berat (&gt;6 METs):</strong> lari, naik tangga intens, bersepeda cepat</li>
             </ul>
-            <p className="mt-2 text-xs text-slate-500">WHO: Sedang 150–300 menit/minggu atau Berat 75–150 menit/minggu</p>
+            <p className="mt-2 text-xs text-slate-500">WHO: target mingguan setara 150–300 menit aktivitas sedang atau 75–150 menit aktivitas berat.</p>
           </div>
         </div>
       ),

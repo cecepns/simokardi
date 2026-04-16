@@ -10,23 +10,42 @@ export default function MonitoringList({ monitoring, domainLabels }) {
   const formatData = (m) => {
     try {
       const d = typeof m.data_json === 'string' ? JSON.parse(m.data_json) : m.data_json
+      const normalizeMakanan = (value) => {
+        if (value && typeof value === 'object') {
+          const makanan = String(value.makanan || '').trim()
+          const porsi = parseFloat(value.porsi)
+          if (!makanan) return ''
+          if (Number.isFinite(porsi) && porsi > 0) return `${makanan} (${porsi} porsi)`
+          return makanan
+        }
+        return String(value || '').trim()
+      }
       if (m.domain === 'pola_makan') {
         const filled = (s) => s != null && String(s).trim() !== ''
+        const karbo = normalizeMakanan(d.karbohidrat)
+        const protein = normalizeMakanan(d.protein)
+        const sayur = normalizeMakanan(d.sayur)
+        const buah = normalizeMakanan(d.buah)
         const parts = []
-        if (filled(d.karbohidrat)) parts.push('Karbo')
-        if (filled(d.protein)) parts.push('Protein')
-        if (filled(d.sayur)) parts.push('Sayur')
-        if (filled(d.buah)) parts.push('Buah')
+        if (filled(karbo)) parts.push(`Karbo: ${karbo}`)
+        if (filled(protein)) parts.push(`Protein: ${protein}`)
+        if (filled(sayur)) parts.push(`Sayur: ${sayur}`)
+        if (filled(buah)) parts.push(`Buah: ${buah}`)
         return parts.length ? parts.join(', ') : '-'
       }
-      if (m.domain === 'istirahat') return `${d.jam_tidur} jam tidur`
+      if (m.domain === 'istirahat') {
+        const siang = d.jam_tidur_siang ?? 0
+        const malam = d.jam_tidur_malam ?? d.jam_tidur ?? 0
+        return `Tidur siang ${siang} jam | tidur malam ${malam} jam`
+      }
       if (m.domain === 'aktivitas_fisik') {
-        const a = d.menit_aktivitas_fisik ?? '-'
-        const o = d.menit_olahraga ?? '-'
-        return `Aktivitas ${a} menit | Olahraga ${o} menit`
+        const kategori = String(d.kategori_aktivitas_harian || '').trim()
+        return kategori ? `Aktivitas harian ${kategori}` : '-'
       }
       if (m.domain === 'konsumsi_obat') return d.minum_obat ? 'Minum obat' : 'Tidak minum'
-    } catch (_) {}
+    } catch {
+      return '-'
+    }
     return '-'
   }
 
@@ -39,7 +58,7 @@ export default function MonitoringList({ monitoring, domainLabels }) {
             <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Domain</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Data</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Skor</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Kategori</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Status SC-CHDI</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200">
@@ -59,7 +78,7 @@ export default function MonitoringList({ monitoring, domainLabels }) {
                     m.kategori === 'adekuat' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
                   }`}
                 >
-                  {m.kategori}
+                  {m.kategori === 'adekuat' ? 'Adekuat' : 'Tidak Adekuat'}
                 </span>
               </td>
             </tr>
