@@ -35,6 +35,8 @@ const AKTIVITAS_HARIAN_OPTIONS = [
   },
 ]
 
+const MENIT_OPTIONS = [0, 15, 30, 45]
+
 function getUsia(patient) {
   const age = Number(patient?.usia)
   if (Number.isFinite(age)) return age
@@ -70,8 +72,10 @@ export default function MonitoringForm({ patientId, patient, domain, onSaved, on
     protein: { makanan: '', porsi: '' },
     sayur: { makanan: '', porsi: '' },
     buah: { makanan: '', porsi: '' },
-    jam_tidur_siang: '',
-    jam_tidur_malam: '',
+    jam_tidur_siang_jam: '',
+    jam_tidur_siang_menit: '0',
+    jam_tidur_malam_jam: '',
+    jam_tidur_malam_menit: '0',
     kategori_aktivitas_harian: '',
     minum_obat: null,
   })
@@ -85,6 +89,14 @@ export default function MonitoringForm({ patientId, patient, domain, onSaved, on
   }
 
   const isAllMode = domain === 'all'
+
+  const toJamDesimal = (jamStr, menitStr) => {
+    if (jamStr === '') return 0
+    const jam = parseInt(jamStr, 10)
+    const menit = parseInt(menitStr || '0', 10)
+    if (!Number.isFinite(jam) || !Number.isFinite(menit)) return 0
+    return jam + (menit / 60)
+  }
 
   const buildPayloads = () => {
     const payloads = []
@@ -115,8 +127,8 @@ export default function MonitoringForm({ patientId, patient, domain, onSaved, on
       payloads.push({
         domain: 'istirahat',
         data: {
-          jam_tidur_siang: parseFloat(form.jam_tidur_siang) || 0,
-          jam_tidur_malam: parseFloat(form.jam_tidur_malam) || 0,
+          jam_tidur_siang: toJamDesimal(form.jam_tidur_siang_jam, form.jam_tidur_siang_menit),
+          jam_tidur_malam: toJamDesimal(form.jam_tidur_malam_jam, form.jam_tidur_malam_menit),
         },
       })
       payloads.push({
@@ -142,8 +154,8 @@ export default function MonitoringForm({ patientId, patient, domain, onSaved, on
         payloads.push({
           domain: 'istirahat',
           data: {
-            jam_tidur_siang: parseFloat(form.jam_tidur_siang) || 0,
-            jam_tidur_malam: parseFloat(form.jam_tidur_malam) || 0,
+            jam_tidur_siang: toJamDesimal(form.jam_tidur_siang_jam, form.jam_tidur_siang_menit),
+            jam_tidur_malam: toJamDesimal(form.jam_tidur_malam_jam, form.jam_tidur_malam_menit),
           },
         })
       } else if (domain === 'aktivitas_fisik') {
@@ -280,6 +292,8 @@ export default function MonitoringForm({ patientId, patient, domain, onSaved, on
 
   const renderIstirahat = (showSection) => {
     if (!showSection) return null
+    const jamOptionsSiang = Array.from({ length: 7 }, (_, i) => i)
+    const jamOptionsMalam = Array.from({ length: 15 }, (_, i) => i)
     return (
       <div className="space-y-2">
         <p className="text-xs text-slate-500">
@@ -289,29 +303,59 @@ export default function MonitoringForm({ patientId, patient, domain, onSaved, on
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Jam tidur siang</label>
-            <input
-              type="number"
-              value={form.jam_tidur_siang}
-              onChange={(e) => handleChange('jam_tidur_siang', e.target.value)}
-              min="0"
-              max="6"
-              step="0.5"
-              placeholder="Contoh: 1"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg"
-            />
+            <div className="grid grid-cols-2 gap-2">
+              <select
+                value={form.jam_tidur_siang_jam}
+                onChange={(e) => handleChange('jam_tidur_siang_jam', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+              >
+                <option value="">Jam</option>
+                {jamOptionsSiang.map((j) => (
+                  <option key={`siang-jam-${j}`} value={String(j)}>
+                    {j} jam
+                  </option>
+                ))}
+              </select>
+              <select
+                value={form.jam_tidur_siang_menit}
+                onChange={(e) => handleChange('jam_tidur_siang_menit', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+              >
+                {MENIT_OPTIONS.map((m) => (
+                  <option key={`siang-menit-${m}`} value={String(m)}>
+                    {m} menit
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Jam tidur malam</label>
-            <input
-              type="number"
-              value={form.jam_tidur_malam}
-              onChange={(e) => handleChange('jam_tidur_malam', e.target.value)}
-              min="0"
-              max="14"
-              step="0.5"
-              placeholder="Contoh: 7.5"
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg"
-            />
+            <div className="grid grid-cols-2 gap-2">
+              <select
+                value={form.jam_tidur_malam_jam}
+                onChange={(e) => handleChange('jam_tidur_malam_jam', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+              >
+                <option value="">Jam</option>
+                {jamOptionsMalam.map((j) => (
+                  <option key={`malam-jam-${j}`} value={String(j)}>
+                    {j} jam
+                  </option>
+                ))}
+              </select>
+              <select
+                value={form.jam_tidur_malam_menit}
+                onChange={(e) => handleChange('jam_tidur_malam_menit', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+              >
+                {MENIT_OPTIONS.map((m) => (
+                  <option key={`malam-menit-${m}`} value={String(m)}>
+                    {m} menit
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>

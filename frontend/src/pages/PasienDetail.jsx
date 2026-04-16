@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import MonitoringForm from '../components/MonitoringForm'
 import MonitoringList from '../components/MonitoringList'
@@ -14,12 +14,15 @@ const domainLabels = {
 
 export default function PasienDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const { fetchWithAuth } = useAuth()
   const [patient, setPatient] = useState(null)
   const [monitoring, setMonitoring] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [selectedDomain, setSelectedDomain] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const [actionError, setActionError] = useState('')
 
   const loadData = () => {
     Promise.all([
@@ -44,6 +47,23 @@ export default function PasienDetail() {
     loadData()
   }
 
+  const handleDelete = async () => {
+    const confirmDelete = window.confirm(`Hapus responden "${patient.nama}"? Data monitoring terkait juga akan terhapus.`)
+    if (!confirmDelete) return
+
+    setDeleting(true)
+    setActionError('')
+    try {
+      const res = await fetchWithAuth(`${API}/patients/${id}`, { method: 'DELETE' })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(result.error || 'Gagal menghapus responden')
+      navigate('/pasien')
+    } catch (err) {
+      setActionError(err.message)
+      setDeleting(false)
+    }
+  }
+
   if (loading || !patient) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
@@ -62,13 +82,29 @@ export default function PasienDetail() {
           <h1 className="text-2xl font-bold text-slate-800">{patient.nama}</h1>
           <p className="text-slate-600">Nomor Rekam Medis: {patient.no_rm} | Usia: {patient.usia} tahun</p>
         </div>
-        <Link
-          to={`/pasien/${id}/edit`}
-          className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 font-medium text-slate-700"
-        >
-          Edit Pasien
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            to={`/pasien/${id}/edit`}
+            className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 font-medium text-slate-700"
+          >
+            Edit Pasien
+          </Link>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={deleting}
+            className="px-4 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 font-medium disabled:opacity-50"
+          >
+            {deleting ? 'Menghapus...' : 'Hapus Responden'}
+          </button>
+        </div>
       </div>
+
+      {actionError && (
+        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">
+          {actionError}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">

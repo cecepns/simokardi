@@ -8,6 +8,8 @@ export default function PasienList() {
   const [patients, setPatients] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [deletingId, setDeletingId] = useState(null)
+  const [actionError, setActionError] = useState('')
 
   useEffect(() => {
     fetchWithAuth(`${API}/patients`)
@@ -22,6 +24,26 @@ export default function PasienList() {
       p.nama?.toLowerCase().includes(search.toLowerCase()) ||
       p.no_rm?.toLowerCase().includes(search.toLowerCase())
   )
+
+  const handleDelete = async (patient) => {
+    const confirmDelete = window.confirm(`Hapus responden "${patient.nama}"? Data monitoring terkait juga akan terhapus.`)
+    if (!confirmDelete) return
+
+    setDeletingId(patient.id)
+    setActionError('')
+    try {
+      const res = await fetchWithAuth(`${API}/patients/${patient.id}`, {
+        method: 'DELETE',
+      })
+      const result = await res.json().catch(() => ({}))
+      if (!res.ok) throw new Error(result.error || 'Gagal menghapus responden')
+      setPatients((prev) => prev.filter((p) => p.id !== patient.id))
+    } catch (err) {
+      setActionError(err.message)
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   if (loading) {
     return (
@@ -55,6 +77,12 @@ export default function PasienList() {
           className="w-full max-w-md px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
         />
       </div>
+
+      {actionError && (
+        <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">
+          {actionError}
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         {filtered.length === 0 ? (
@@ -98,12 +126,22 @@ export default function PasienList() {
                       {p.berat_badan} kg / {p.tinggi_badan} cm
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <Link
-                        to={`/pasien/${p.id}`}
-                        className="text-rose-600 hover:text-rose-700 font-medium text-sm"
-                      >
-                        Lihat →
-                      </Link>
+                      <div className="inline-flex items-center gap-3">
+                        <Link
+                          to={`/pasien/${p.id}`}
+                          className="text-rose-600 hover:text-rose-700 font-medium text-sm"
+                        >
+                          Lihat →
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(p)}
+                          disabled={deletingId === p.id}
+                          className="text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
+                        >
+                          {deletingId === p.id ? 'Menghapus...' : 'Hapus'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
